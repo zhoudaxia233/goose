@@ -1,12 +1,12 @@
 # goose
 
-
 <a href=""><img height="190px" src="logo.svg"></a>
 
 **goose** is a lightweight web framework in Go.
 
 <details>
 <summary><strong>A hello world example</strong></summary>
+
 ```go
 package main
 
