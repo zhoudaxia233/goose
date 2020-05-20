@@ -1,7 +1,6 @@
 package goose
 
 import (
-	"fmt"
 	"log"
 	"net/http"
 )
@@ -35,13 +34,7 @@ func (g *Goose) POST(pattern string, handler HandlerFunc) {
 
 func (g *Goose) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	g.context.resetContext(w, r)
-	ctx := g.context
-	k := ctx.Method + "," + ctx.Path
-	if handler, ok := g.router.routers[k]; ok {
-		handler(ctx)
-	} else {
-		fmt.Fprintf(ctx.ResponseWriter, "404 Not found! - %s\n", ctx.Path)
-	}
+	g.router.handle(g.context)
 }
 
 // Run is used to start a http server

@@ -1,6 +1,9 @@
 package goose
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 // Router represents a collection of path=>handler mappings
 type Router struct {
@@ -22,4 +25,13 @@ func (r *Router) get(pattern string, handler HandlerFunc) {
 
 func (r *Router) post(pattern string, handler HandlerFunc) {
 	r.addRoute(http.MethodPost, pattern, handler)
+}
+
+func (r *Router) handle(ctx *Context) {
+	key := ctx.Method + "," + ctx.Path
+	if handler, ok := r.routers[key]; ok {
+		handler(ctx)
+	} else {
+		fmt.Fprintf(ctx.ResponseWriter, "404 Not found! - %s\n", ctx.Path)
+	}
 }
