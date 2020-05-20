@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"net/http"
 
 	"github.com/zhoudaxia233/goose"
 )
@@ -10,12 +9,12 @@ import (
 func main() {
 	g := goose.New()
 
-	g.GET("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello World!")
+	g.GET("/", func(ctx *goose.Context) {
+		fmt.Fprintf(ctx.ResponseWriter, "Hello World!")
 	})
 
-	g.GET("/info", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "My name is goose!")
+	g.GET("/info", func(ctx *goose.Context) {
+		fmt.Fprintf(ctx.ResponseWriter, "My name is goose!")
 	})
 
 	g.Run(":8080")

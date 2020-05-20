@@ -4,7 +4,7 @@
 
 **goose** is a lightweight web framework in Go.
 
-<details>
+<!-- <details>
 <summary><strong>A hello world example</strong></summary>
 
 ```go
@@ -28,4 +28,4 @@ func main() {
 }
 ```
 
-</details>
+</details> -->

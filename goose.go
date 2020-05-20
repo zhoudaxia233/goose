@@ -7,7 +7,7 @@ import (
 )
 
 // HandlerFunc is the type of request handlers used by goose
-type HandlerFunc func(http.ResponseWriter, *http.Request)
+type HandlerFunc func(*Context)
 
 // Mux is an HTTP request multiplexer
 type Mux struct {
@@ -30,11 +30,12 @@ func (m *Mux) GET(pattern string, handler HandlerFunc) {
 }
 
 func (m *Mux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	k := r.Method + r.URL.Path
+	ctx := newContext(w, r)
+	k := ctx.Method + ctx.Path
 	if handler, ok := m.router[k]; ok {
-		handler(w, r)
+		handler(ctx)
 	} else {
-		fmt.Fprintf(w, "404 Not found! - %s\n", r.URL.String())
+		fmt.Fprintf(ctx.ResponseWriter, "404 Not found! - %s\n", ctx.Path)
 	}
 }
 
