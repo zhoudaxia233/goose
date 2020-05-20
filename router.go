@@ -16,12 +16,10 @@ func (r *Router) addRoute(method string, pattern string, handler HandlerFunc) {
 	r.routers[key] = handler
 }
 
-// GET is used to handle GET requests
-func (r *Router) GET(pattern string, handler HandlerFunc) {
+func (r *Router) get(pattern string, handler HandlerFunc) {
 	r.addRoute(http.MethodGet, pattern, handler)
 }
 
-// POST is used to handle POST requests
-func (r *Router) POST(pattern string, handler HandlerFunc) {
+func (r *Router) post(pattern string, handler HandlerFunc) {
 	r.addRoute(http.MethodPost, pattern, handler)
 }

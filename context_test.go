@@ -12,7 +12,9 @@ func TestContextQuery(t *testing.T) {
 	params.Set("name", "Zheng Zhou")
 	params.Set("email", "go.ose@goose.com")
 	req := httptest.NewRequest(http.MethodGet, "/?"+params.Encode(), nil)
-	ctx := newContext(nil, req)
+	g := New()
+	g.context.resetContext(nil, req)
+	ctx := g.context
 
 	want := "Zheng Zhou"
 	if got := ctx.Query("name"); got != want {

@@ -12,8 +12,12 @@ type Context struct {
 	Method string
 }
 
-func newContext(w http.ResponseWriter, r *http.Request) *Context {
-	return &Context{
+func newContext() *Context {
+	return &Context{}
+}
+
+func (ctx *Context) resetContext(w http.ResponseWriter, r *http.Request) {
+	*ctx = Context{
 		ResponseWriter: w,
 		Request:        r,
 		Path:           r.URL.Path,
