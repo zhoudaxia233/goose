@@ -4,28 +4,25 @@
 
 **goose** is a lightweight web framework in Go.
 
-<!-- <details>
+<details>
 <summary><strong>A hello world example</strong></summary>
 
 ```go
 package main
 
 import (
-	"fmt"
-	"net/http"
-
 	"github.com/zhoudaxia233/goose"
 )
 
 func main() {
 	g := goose.New()
 
-	g.GET("/", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, "Hello World!")
+	g.GET("/", func(ctx *goose.Context) {
+		ctx.String("Hello World!")
 	})
 
 	g.Run(":8080")
 }
 ```
 
-</details> -->
+</details>
