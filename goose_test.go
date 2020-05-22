@@ -22,13 +22,17 @@ func TestRun(t *testing.T) {
 	// otherwise the main thread will complete
 	time.Sleep(200 * time.Millisecond)
 
+	url := "http://127.0.0.1:8080" + "/goose"
+	testResponseBody(t, url, http.StatusOK, "I love goose!")
+}
+
+func testResponseBody(t *testing.T, url string, wantStatusCode int, wantBody string) {
 	// https://stackoverflow.com/questions/12122159/how-to-do-a-https-request-with-bad-certificate
 	tr := &http.Transport{
 		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	client := &http.Client{Transport: tr}
 
-	url := "http://127.0.0.1:8080" + "/goose"
 	resp, err := client.Get(url)
 	if err != nil {
 		t.Fatal(err)
@@ -40,11 +44,11 @@ func TestRun(t *testing.T) {
 		t.Fatal(ioerr)
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		t.Errorf("Status Code: Want 200, Got %d", resp.StatusCode)
+	if resp.StatusCode != wantStatusCode {
+		t.Errorf("Status Code: Want %d, Got %d", wantStatusCode, resp.StatusCode)
 	}
 
-	if string(body) != "I love goose!" {
-		t.Errorf("Text doesn't match. Want: I love goose!, Got: %s", string(body))
+	if string(body) != wantBody {
+		t.Errorf("Text doesn't match. Want: %s, Got: %s", wantBody, string(body))
 	}
 }
