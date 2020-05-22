@@ -2,6 +2,7 @@ package goose
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -48,8 +49,8 @@ func (ctx *Context) SetStatusCode(statusCode int) {
 }
 
 // String writes string to the response
-func (ctx *Context) String(s string) {
-	ctx.setString(http.StatusOK, s)
+func (ctx *Context) String(a ...interface{}) {
+	ctx.setString(http.StatusOK, a...)
 }
 
 // HTML writes html to the response
@@ -62,10 +63,10 @@ func (ctx *Context) JSON(obj interface{}) {
 	ctx.setJSON(http.StatusOK, obj)
 }
 
-func (ctx *Context) setString(statusCode int, s string) {
+func (ctx *Context) setString(statusCode int, a ...interface{}) {
 	ctx.SetHeader("Content-Type", "text/plain; charset=utf-8")
 	ctx.SetStatusCode(statusCode)
-	if _, err := ctx.ResponseWriter.Write([]byte(s)); err != nil {
+	if _, err := ctx.ResponseWriter.Write([]byte(fmt.Sprint(a...))); err != nil {
 		http.Error(ctx.ResponseWriter, err.Error(), http.StatusInternalServerError)
 	}
 }

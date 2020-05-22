@@ -1,7 +1,6 @@
 package goose
 
 import (
-	"fmt"
 	"net/http"
 )
 
@@ -32,6 +31,6 @@ func (r *Router) handle(ctx *Context) {
 	if handler, ok := r.routers[key]; ok {
 		handler(ctx)
 	} else {
-		fmt.Fprintf(ctx.ResponseWriter, "404 Not found! - %s\n", ctx.Path)
+		ctx.setString(404, "404 Not Found! - ", ctx.Path)
 	}
 }
