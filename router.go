@@ -6,16 +6,18 @@ import (
 
 // Router represents a collection of path=>handler mappings
 type Router struct {
-	routers map[string]HandlerFunc
+	routers map[string]*node
 }
 
 func newRouter() *Router {
-	return &Router{routers: make(map[string]HandlerFunc)}
+	return &Router{routers: make(map[string]*node)}
 }
 
 func (r *Router) addRoute(method string, pattern string, handler HandlerFunc) {
-	key := method + "," + pattern
-	r.routers[key] = handler
+	if _, exists := r.routers[method]; !exists {
+		r.routers[method] = &node{}
+	}
+	r.routers[method].insert(pattern, handler)
 }
 
 func (r *Router) get(pattern string, handler HandlerFunc) {
@@ -27,8 +29,9 @@ func (r *Router) post(pattern string, handler HandlerFunc) {
 }
 
 func (r *Router) handle(ctx *Context) {
-	key := ctx.Method + "," + ctx.Path
-	if handler, ok := r.routers[key]; ok {
+	handler := r.routers[ctx.Method].search(ctx.Path).handler
+
+	if handler != nil {
 		handler(ctx)
 	} else {
 		ctx.setString(404, "404 Not Found! - ", ctx.Path)
