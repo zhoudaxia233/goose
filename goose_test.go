@@ -11,8 +11,12 @@ import (
 func TestRun(t *testing.T) {
 	g := New()
 	go func() {
+		g.GET("/", func(ctx *Context) {
+			ctx.String("Main Page!")
+		})
 		g.GET("/goose", func(ctx *Context) {
-			ctx.String("I love goose!")
+			name := "goose"
+			ctx.String("I love %s!", name)
 		})
 		if err := g.Run(":8080"); err != nil {
 			t.Fatal(err)
@@ -22,7 +26,10 @@ func TestRun(t *testing.T) {
 	// otherwise the main thread will complete
 	time.Sleep(200 * time.Millisecond)
 
-	url := "http://127.0.0.1:8080" + "/goose"
+	url := "http://127.0.0.1:8080"
+	testResponseBody(t, url, http.StatusOK, "Main Page!")
+
+	url = "http://127.0.0.1:8080" + "/goose"
 	testResponseBody(t, url, http.StatusOK, "I love goose!")
 }
 

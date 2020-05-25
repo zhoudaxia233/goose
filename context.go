@@ -49,8 +49,8 @@ func (ctx *Context) SetStatusCode(statusCode int) {
 }
 
 // String writes string to the response
-func (ctx *Context) String(a ...interface{}) {
-	ctx.setString(http.StatusOK, a...)
+func (ctx *Context) String(format string, a ...interface{}) {
+	ctx.setString(http.StatusOK, format, a...)
 }
 
 // HTML writes html to the response
@@ -63,10 +63,10 @@ func (ctx *Context) JSON(obj interface{}) {
 	ctx.setJSON(http.StatusOK, obj)
 }
 
-func (ctx *Context) setString(statusCode int, a ...interface{}) {
+func (ctx *Context) setString(statusCode int, format string, a ...interface{}) {
 	ctx.SetHeader("Content-Type", "text/plain; charset=utf-8")
 	ctx.SetStatusCode(statusCode)
-	if _, err := ctx.ResponseWriter.Write([]byte(fmt.Sprint(a...))); err != nil {
+	if _, err := ctx.ResponseWriter.Write([]byte(fmt.Sprintf(format, a...))); err != nil {
 		http.Error(ctx.ResponseWriter, err.Error(), http.StatusInternalServerError)
 	}
 }

@@ -34,6 +34,6 @@ func (r *Router) handle(ctx *Context) {
 	if handler != nil {
 		handler(ctx)
 	} else {
-		ctx.setString(404, "404 Not Found! - ", ctx.Path)
+		ctx.setString(404, "404 Not Found! - %s", ctx.Path)
 	}
 }
