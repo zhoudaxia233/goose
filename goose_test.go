@@ -8,7 +8,12 @@ import (
 	"time"
 )
 
+const (
+	baseURL = "http://127.0.0.1"
+)
+
 func TestRun(t *testing.T) {
+	port := ":8080"
 	g := New()
 	go func() {
 		g.GET("/", func(ctx *Context) {
@@ -18,7 +23,7 @@ func TestRun(t *testing.T) {
 			name := "goose"
 			ctx.String("I love %s!", name)
 		})
-		if err := g.Run(":8080"); err != nil {
+		if err := g.Run(port); err != nil {
 			t.Fatal(err)
 		}
 	}()
@@ -26,11 +31,36 @@ func TestRun(t *testing.T) {
 	// otherwise the main thread will complete
 	time.Sleep(200 * time.Millisecond)
 
-	url := "http://127.0.0.1:8080"
+	url := baseURL + port
 	testResponseBody(t, url, http.StatusOK, "Main Page!")
 
-	url = "http://127.0.0.1:8080" + "/goose"
+	url = baseURL + port + "/goose"
 	testResponseBody(t, url, http.StatusOK, "I love goose!")
+}
+
+func TestColonWildcardRouting(t *testing.T) {
+	port := ":8081"
+	g := New()
+	go func() {
+		g.GET("/:name", func(ctx *Context) {
+			ctx.String("I love %s!", ctx.Param(":name"))
+		})
+		g.GET("/category/:category", func(ctx *Context) {
+			ctx.String("Category: %s", ctx.Param(":category"))
+		})
+		if err := g.Run(port); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	// wait for the goroutine to start and run the server
+	// otherwise the main thread will complete
+	time.Sleep(200 * time.Millisecond)
+
+	url := baseURL + port + "/goose"
+	testResponseBody(t, url, http.StatusOK, "I love goose!")
+
+	url = baseURL + port + "/category/history"
+	testResponseBody(t, url, http.StatusOK, "Category: history")
 }
 
 func testResponseBody(t *testing.T, url string, wantStatusCode int, wantBody string) {

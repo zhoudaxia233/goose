@@ -20,6 +20,9 @@ type Context struct {
 
 	// response-related
 	StatusCode int
+
+	// misc
+	Params map[string]string
 }
 
 func newContext() *Context {
@@ -93,4 +96,15 @@ func (ctx *Context) setJSON(statusCode int, obj interface{}) {
 // Query returns the value of the given param in the request URL
 func (ctx *Context) Query(param string) string {
 	return ctx.Request.URL.Query().Get(param)
+}
+
+// misc part
+
+// Param returns the value associated with wildcard param in the routing pattern
+func (ctx *Context) Param(param string) string {
+	value, exists := ctx.Params[param]
+	if !exists {
+		panic(fmt.Sprintf("Wildcard parameter %s doesn't exist.", param))
+	}
+	return value
 }

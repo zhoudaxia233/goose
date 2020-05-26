@@ -78,14 +78,15 @@ func (n *node) insertHelper(segments []string, level int, handler HandlerFunc) {
 	child.insertHelper(segments, level+1, handler)
 }
 
-func (n *node) search(pattern string) *node {
+func (n *node) search(pattern string) (*node, map[string]string) {
 	segments := parsePattern(pattern)
 	searchResultPtr := &node{}
-	n.searchHelper(segments, 0, searchResultPtr)
-	return searchResultPtr
+	params := make(map[string]string)
+	n.searchHelper(segments, 0, searchResultPtr, params)
+	return searchResultPtr, params
 }
 
-func (n *node) searchHelper(segments []string, level int, searchResultPtr *node) {
+func (n *node) searchHelper(segments []string, level int, searchResultPtr *node, params map[string]string) {
 	segment := segments[level]
 	child := n.matchChild(segment)
 
@@ -95,11 +96,17 @@ func (n *node) searchHelper(segments []string, level int, searchResultPtr *node)
 	}
 
 	// else
+	// => save the "wildcard: real-value" mapping in map:params
+	if child.isWildcard {
+		params[child.segment] = segment
+	}
+	// => if the incoming segment is an asteriod wildcard, or we are dealing with the last segment
+	//    save the search result and return
 	if strings.HasPrefix(child.segment, "*") || (level == len(segments)-1) {
 		*searchResultPtr = *child
 		return
 	}
-	child.searchHelper(segments, level+1, searchResultPtr)
+	child.searchHelper(segments, level+1, searchResultPtr, params)
 }
 
 func (n *node) matchChild(segment string) *node {

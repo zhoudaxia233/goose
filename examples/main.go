@@ -15,5 +15,9 @@ func main() {
 		ctx.HTML("<h1>My name is goose!</h1>")
 	})
 
+	g.GET("/info/:name", func(ctx *goose.Context) {
+		ctx.String("My name is %s", ctx.Param(":name"))
+	})
+
 	g.Run(":8080")
 }
