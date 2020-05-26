@@ -41,11 +41,11 @@ func (n *node) insertHelper(segments []string, level int, handler HandlerFunc) {
 
 		/* scenario 1:
 		   if the handler of the child node has already been set, it means that
-		   the child node is a wildcard node. We should panic here.
+		   the child node is either a wildcard node or a repetitive routing. We should panic here.
 		*/
 		if child.handler != nil {
 			panic(fmt.Sprintf(
-				"Found conflicts between %s and existing wildcard %s",
+				"Found conflicts between %s and existing %s",
 				segment,
 				child.segment,
 			))
