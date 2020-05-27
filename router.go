@@ -29,9 +29,9 @@ func (r *Router) post(pattern string, handler HandlerFunc) {
 }
 
 func (r *Router) handle(ctx *Context) {
-	routingTree, params := r.routers[ctx.Method].search(ctx.Path)
+	searchResultPtr, params := r.routers[ctx.Method].search(ctx.Path)
 	ctx.Params = params
-	handler := routingTree.handler
+	handler := searchResultPtr.handler
 
 	if handler != nil {
 		handler(ctx)

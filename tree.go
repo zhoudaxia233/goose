@@ -21,62 +21,179 @@ func (n *node) insert(pattern string, handler HandlerFunc) {
 
 func (n *node) insertHelper(segments []string, level int, handler HandlerFunc) {
 	segment := segments[level]
-	child := n.matchChild(segment)
+	isLastSegment := (level == len(segments)-1)
+	isWildSegment := strings.HasPrefix(segment, ":") || strings.HasPrefix(segment, "*")
 
-	// if we are processing the last segment (aka. endpoint),
-	// assign the handler to the child node and exit
-	if level == len(segments)-1 {
-		// if the child node doesn't exist, create one, then assign the handler
-		if child == nil {
-			child = &node{
-				segment:    segment,
-				isWildcard: strings.HasPrefix(segment, ":") || strings.HasPrefix(segment, "*"),
-				handler:    handler,
+	/* if the incoming segment is a wildcard and is the last segment
+	   it means that this segment acts as a wildcard endpoint
+
+	   Note: an endpoint in the above context refers to "a node attached with non-nil handler"
+	         also, the last node/segment must be an endpoint (this is the definition)
+	*/
+	if isWildSegment && isLastSegment {
+		needNewChild := true
+		existingChild := &node{}
+
+		for _, child := range n.children {
+			// make sure there's no other endpoint exists in n.children to avoid conflicts
+			if child.handler != nil {
+				panic(
+					fmt.Sprintf(
+						"Wildcard segment \"%s\" conflicts with existing segment \"%s\"",
+						segment,
+						child.segment,
+					),
+				)
 			}
-			n.children = append(n.children, child)
+
+			if segment == child.segment {
+				needNewChild = false
+				existingChild = child
+			}
+		}
+
+		// if we got here, it means no endpoint exists in n.children
+		if needNewChild {
+			newChild := &node{
+				segment:    segment,
+				isWildcard: isWildSegment,
+				handler:    handler, // we only assign the handler when it's an endpoint
+			}
+			n.children = append(n.children, newChild)
+			return
+		} else {
+			existingChild.handler = handler
 			return
 		}
+	}
 
-		// if the child node already exists
+	if !isWildSegment && isLastSegment {
+		needNewChild := true
+		existingChild := &node{}
 
-		/* scenario 1:
-		   if the handler of the child node has already been set, it means that
-		   the child node is either a wildcard node or a repetitive routing. We should panic here.
-		*/
-		if child.handler != nil {
-			panic(fmt.Sprintf(
-				"Found conflicts between %s and existing %s",
-				segment,
-				child.segment,
-			))
+		for _, child := range n.children {
+			if child.isWildcard && child.handler != nil {
+				panic(
+					fmt.Sprintf(
+						"Segment \"%s\" conflicts with existing wildcard segment \"%s\"",
+						segment,
+						child.segment,
+					),
+				)
+			} else if segment == child.segment && child.handler != nil {
+				panic(
+					fmt.Sprintf(
+						"Segment \"%s\" conflicts with existing segment \"%s\"",
+						segment,
+						child.segment,
+					),
+				)
+			}
+
+			if segment == child.segment {
+				needNewChild = false
+				existingChild = child
+			}
+		}
+
+		if needNewChild {
+			newChild := &node{
+				segment:    segment,
+				isWildcard: isWildSegment,
+				handler:    handler,
+			}
+			n.children = append(n.children, newChild)
+			return
 		} else {
-			/* scenario 2:
-			   if the handler of the child node has not been set, it means that previously
-			   the child node is just a middle point of a URI, it's not an endpoint. That's why
-			   it was not assigned with any handler.
-
-			   Therefore, in this case, we assign the handler to it.
-			   (from now on, the child node is no longer a "nobody cares" middle point. We assigned it
-			    a handler, which makes the node an endpoint)
-			*/
-			child.handler = handler
+			existingChild.handler = handler
+			return
 		}
-		return
 	}
 
-	// if we are not processing the last segment
+	if !isLastSegment {
+		needNewChild := true
+		existingChild := &node{}
 
-	// if the segment doesn't match any child node, add a new child
-	if child == nil {
-		child = &node{
-			segment:    segment,
-			isWildcard: strings.HasPrefix(segment, ":") || strings.HasPrefix(segment, "*"),
+		for _, child := range n.children {
+			if segment == child.segment {
+				needNewChild = false
+				existingChild = child
+				break
+			}
 		}
-		n.children = append(n.children, child)
+
+		if needNewChild {
+			newChild := &node{
+				segment:    segment,
+				isWildcard: isWildSegment,
+			}
+			n.children = append(n.children, newChild)
+			newChild.insertHelper(segments, level+1, handler)
+		} else {
+			existingChild.insertHelper(segments, level+1, handler)
+		}
+
 	}
-	// move on to the next level
-	child.insertHelper(segments, level+1, handler)
 }
+
+// func (n *node) insertHelper(segments []string, level int, handler HandlerFunc) {
+// 	segment := segments[level]
+// 	child := n.matchChild(segment)
+
+// 	// if we are processing the last segment (aka. endpoint),
+// 	// assign the handler to the child node and exit
+// 	if level == len(segments)-1 {
+// 		// if the child node doesn't exist, create one, then assign the handler
+// 		if child == nil {
+// 			child = &node{
+// 				segment:    segment,
+// 				isWildcard: strings.HasPrefix(segment, ":") || strings.HasPrefix(segment, "*"),
+// 				handler:    handler,
+// 			}
+// 			n.children = append(n.children, child)
+// 			return
+// 		}
+
+// 		// if the child node already exists
+
+// 		/* scenario 1:
+// 		   if the handler of the child node has already been set, it means that
+// 		   the child node is either a wildcard node or a repetitive routing. We should panic here.
+// 		*/
+// 		if child.handler != nil {
+// 			panic(fmt.Sprintf(
+// 				"Found conflicts between %s and existing %s",
+// 				segment,
+// 				child.segment,
+// 			))
+// 		} else {
+// 			/* scenario 2:
+// 			   if the handler of the child node has not been set, it means that previously
+// 			   the child node is just a middle point of a URI, it's not an endpoint. That's why
+// 			   it was not assigned with any handler.
+
+// 			   Therefore, in this case, we assign the handler to it.
+// 			   (from now on, the child node is no longer a "nobody cares" middle point. We assigned it
+// 			    a handler, which makes the node an endpoint)
+// 			*/
+// 			child.handler = handler
+// 		}
+// 		return
+// 	}
+
+// 	// if we are not processing the last segment
+
+// 	// if the segment doesn't match any child node, add a new child
+// 	if child == nil {
+// 		child = &node{
+// 			segment:    segment,
+// 			isWildcard: strings.HasPrefix(segment, ":") || strings.HasPrefix(segment, "*"),
+// 		}
+// 		n.children = append(n.children, child)
+// 	}
+// 	// move on to the next level
+// 	child.insertHelper(segments, level+1, handler)
+// }
 
 func (n *node) search(pattern string) (*node, map[string]string) {
 	segments := parsePattern(pattern)
@@ -118,12 +235,12 @@ func (n *node) matchChild(segment string) *node {
 			   are in the process of constructing the tree. Since the request URL
 			   will not contain wildcard.
 	*/
-	if (len(n.children) > 0) && (strings.HasPrefix(segment, ":") || strings.HasPrefix(segment, "*")) {
-		panic(fmt.Sprintf(
-			"Wildcard segment %s conflicts with existing routers",
-			segment,
-		))
-	}
+	// if (len(n.children) > 0) && (strings.HasPrefix(segment, ":") || strings.HasPrefix(segment, "*")) {
+	// 	panic(fmt.Sprintf(
+	// 		"Wildcard segment %s conflicts with existing routers",
+	// 		segment,
+	// 	))
+	// }
 
 	// if the incoming segment is not wildcard
 	for _, child := range n.children {
