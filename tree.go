@@ -205,51 +205,86 @@ func (n *node) search(pattern string) (*node, map[string]string) {
 
 func (n *node) searchHelper(segments []string, level int, searchResultPtr *node, params map[string]string) {
 	segment := segments[level]
-	child := n.matchChild(segment)
+	isLastSegment := (level == len(segments)-1)
 
-	// if there is no match for the incoming segment, exit
-	if child == nil {
-		return
-	}
+	if isLastSegment {
+		for _, child := range n.children {
+			if (child.segment == segment || child.isWildcard) && child.handler != nil {
+				if child.isWildcard {
+					params[child.segment] = segment
+				}
+				*searchResultPtr = *child
+				return
+			}
+		}
+	} else {
+		skipWildcardMatching := false
 
-	// else
-	// => save the "wildcard: real-value" mapping in map:params
-	if child.isWildcard {
-		params[child.segment] = segment
-	}
-	// => if the incoming segment is an asteriod wildcard, or we are dealing with the last segment
-	//    save the search result and return
-	if strings.HasPrefix(child.segment, "*") || (level == len(segments)-1) {
-		*searchResultPtr = *child
-		return
-	}
-	child.searchHelper(segments, level+1, searchResultPtr, params)
-}
+		for _, child := range n.children {
+			if child.segment == segment {
+				skipWildcardMatching = true
+				child.searchHelper(segments, level+1, searchResultPtr, params)
+			}
+		}
 
-func (n *node) matchChild(segment string) *node {
-	// if the child node already exists, and the incoming segment is a wildcard,
-	// they will conflict with each other
-	/* Note 1: node & segment are interchangeable concepts in the above context
-	   Note 2: if the incoming segment is a wildcard, it also implies that we are
-			   using func:matchChild in func:insert, not func:search, which means we
-			   are in the process of constructing the tree. Since the request URL
-			   will not contain wildcard.
-	*/
-	// if (len(n.children) > 0) && (strings.HasPrefix(segment, ":") || strings.HasPrefix(segment, "*")) {
-	// 	panic(fmt.Sprintf(
-	// 		"Wildcard segment %s conflicts with existing routers",
-	// 		segment,
-	// 	))
-	// }
-
-	// if the incoming segment is not wildcard
-	for _, child := range n.children {
-		if child.segment == segment || child.isWildcard {
-			return child
+		if !skipWildcardMatching {
+			for _, child := range n.children {
+				if child.isWildcard {
+					params[child.segment] = segment
+					child.searchHelper(segments, level+1, searchResultPtr, params)
+				}
+			}
 		}
 	}
-	return nil
 }
+
+// func (n *node) searchHelper(segments []string, level int, searchResultPtr *node, params map[string]string) {
+// 	segment := segments[level]
+// 	child := n.matchChild(segment)
+
+// 	// if there is no match for the incoming segment, exit
+// 	if child == nil {
+// 		return
+// 	}
+
+// 	// else
+// 	// => save the "wildcard: real-value" mapping in map:params
+// 	if child.isWildcard {
+// 		params[child.segment] = segment
+// 	}
+// 	// => if the incoming segment is an asteriod wildcard, or we are dealing with the last segment
+// 	//    save the search result and return
+// 	if strings.HasPrefix(child.segment, "*") || (level == len(segments)-1) {
+// 		*searchResultPtr = *child
+// 		return
+// 	}
+// 	child.searchHelper(segments, level+1, searchResultPtr, params)
+// }
+
+// func (n *node) matchChild(segment string) *node {
+// 	// if the child node already exists, and the incoming segment is a wildcard,
+// 	// they will conflict with each other
+// 	/* Note 1: node & segment are interchangeable concepts in the above context
+// 	   Note 2: if the incoming segment is a wildcard, it also implies that we are
+// 			   using func:matchChild in func:insert, not func:search, which means we
+// 			   are in the process of constructing the tree. Since the request URL
+// 			   will not contain wildcard.
+// 	*/
+// 	// if (len(n.children) > 0) && (strings.HasPrefix(segment, ":") || strings.HasPrefix(segment, "*")) {
+// 	// 	panic(fmt.Sprintf(
+// 	// 		"Wildcard segment %s conflicts with existing routers",
+// 	// 		segment,
+// 	// 	))
+// 	// }
+
+// 	// if the incoming segment is not wildcard
+// 	for _, child := range n.children {
+// 		if child.segment == segment || child.isWildcard {
+// 			return child
+// 		}
+// 	}
+// 	return nil
+// }
 
 // param:pattern must be a valid URL
 func parsePattern(pattern string) (segments []string) {
