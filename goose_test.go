@@ -63,6 +63,45 @@ func TestColonWildcardRouting(t *testing.T) {
 	testResponseBody(t, url, http.StatusOK, "Category: history")
 }
 
+func TestRoutingWithAndWithoutTrailingSlash(t *testing.T) {
+	port := ":8085"
+	g := New()
+	go func() {
+		g.GET("/info", func(ctx *Context) {
+			ctx.String("Information page")
+		})
+		g.GET("/info/", func(ctx *Context) {
+			ctx.String("Trailing information page")
+		})
+
+		g.GET("/animal/:name", func(ctx *Context) {
+			ctx.String("I love %s!", ctx.Param(":name"))
+		})
+		g.GET("/animal/:name/", func(ctx *Context) {
+			ctx.String("I love %s 3000 times!", ctx.Param(":name"))
+		})
+
+		if err := g.Run(port); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	// wait for the goroutine to start and run the server
+	// otherwise the main thread will complete
+	time.Sleep(200 * time.Millisecond)
+
+	url := baseURL + port + "/info"
+	testResponseBody(t, url, http.StatusOK, "Information page")
+
+	url = baseURL + port + "/info/"
+	testResponseBody(t, url, http.StatusOK, "Trailing information page")
+
+	url = baseURL + port + "/animal/goose"
+	testResponseBody(t, url, http.StatusOK, "I love goose!")
+
+	url = baseURL + port + "/animal/goose/"
+	testResponseBody(t, url, http.StatusOK, "I love goose 3000 times!")
+}
+
 func testResponseBody(t *testing.T, url string, wantStatusCode int, wantBody string) {
 	// https://stackoverflow.com/questions/12122159/how-to-do-a-https-request-with-bad-certificate
 	tr := &http.Transport{
