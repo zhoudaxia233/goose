@@ -6,7 +6,6 @@ import "net/http"
 type RouterGroup struct {
 	prefix      string
 	middlewares []HandlerFunc
-	parent      *RouterGroup
 	goose       *Goose
 }
 
@@ -19,7 +18,6 @@ func (rg *RouterGroup) Group(prefix string) *RouterGroup {
 	goose := rg.goose
 	newGroup := &RouterGroup{
 		prefix: rg.prefix + prefix,
-		parent: rg,
 		goose:  goose,
 	}
 	goose.groups = append(goose.groups, newGroup)

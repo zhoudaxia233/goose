@@ -28,6 +28,13 @@ func main() {
 		v1.GET("/hello", func(ctx *goose.Context) {
 			ctx.String("Hello V1!")
 		})
+
+		v2 := v1.Group("/v2")
+		{
+			v2.GET("/hello", func(ctx *goose.Context) {
+				ctx.String("Hello V2!")
+			})
+		}
 	}
 
 	// g.DrawRoutingTree("GET")
