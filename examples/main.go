@@ -19,7 +19,7 @@ func main() {
 		ctx.String("Category: %s", ctx.Param(":category"))
 	})
 
-	g.DrawRoutingTree("GET")
+	// g.DrawRoutingTree("GET")
 
 	g.Run(":8080")
 }
