@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// Router represents a collection of path=>handler mappings
+// Router represents a collection of "HTTP verbs=>routing tree" mappings
 type Router struct {
 	routers map[string]*node
 }
