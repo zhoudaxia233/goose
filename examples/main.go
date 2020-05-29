@@ -19,6 +19,17 @@ func main() {
 		ctx.String("Category: %s", ctx.Param(":category"))
 	})
 
+	v1 := g.Group("/v1")
+	{
+		v1.GET("/", func(ctx *goose.Context) {
+			ctx.HTML("<h1>V1 PAGE!</h1>")
+		})
+
+		v1.GET("/hello", func(ctx *goose.Context) {
+			ctx.String("Hello V1!")
+		})
+	}
+
 	// g.DrawRoutingTree("GET")
 
 	g.Run(":8080")

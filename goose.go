@@ -8,18 +8,28 @@ import (
 // HandlerFunc is the type of request handlers used by goose
 type HandlerFunc func(*Context)
 
-// Goose is the core of everything
+// Goose is a top-level framework instance
 type Goose struct {
-	context *Context
-	router  *Router
+	routerGroup *RouterGroup
+	groups      []*RouterGroup
+	context     *Context
+	router      *Router
 }
 
 // New is the constructor of goose.Goose
 func New() *Goose {
-	return &Goose{
+	goose := &Goose{
 		context: newContext(),
 		router:  newRouter(),
 	}
+	goose.routerGroup = newRouterGroup(goose)
+	goose.groups = []*RouterGroup{goose.routerGroup}
+	return goose
+}
+
+// Group is used to create a new router group
+func (g *Goose) Group(prefix string) *RouterGroup {
+	return g.routerGroup.Group(prefix)
 }
 
 // GET is used to handle GET requests
