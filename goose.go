@@ -10,10 +10,10 @@ type HandlerFunc func(*Context)
 
 // Goose is a top-level framework instance
 type Goose struct {
-	routerGroup *RouterGroup
-	groups      []*RouterGroup
-	context     *Context
-	router      *Router
+	*RouterGroup
+	groups  []*RouterGroup
+	context *Context
+	router  *Router
 }
 
 // New is the constructor of goose.Goose
@@ -22,29 +22,24 @@ func New() *Goose {
 		context: newContext(),
 		router:  newRouter(),
 	}
-	goose.routerGroup = newRouterGroup(goose)
-	goose.groups = []*RouterGroup{goose.routerGroup}
+	goose.RouterGroup = newRouterGroup(goose)
+	goose.groups = []*RouterGroup{goose.RouterGroup}
 	return goose
 }
 
-// Group is used to create a new router group
-func (g *Goose) Group(prefix string) *RouterGroup {
-	return g.routerGroup.Group(prefix)
-}
-
-// GET is used to handle GET requests
-func (g *Goose) GET(pattern string, handler HandlerFunc) {
-	g.router.get(pattern, handler)
-}
-
-// POST is used to handle POST requests
-func (g *Goose) POST(pattern string, handler HandlerFunc) {
-	g.router.post(pattern, handler)
-}
-
 func (g *Goose) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	g.context.resetContext(w, r)
-	g.router.handle(g.context)
+	ctx := g.context
+	ctx.resetContext(w, r)
+
+	searchResultPtr, params := g.router.routers[ctx.Method].search(ctx.Path)
+	ctx.Params = params
+	handler := searchResultPtr.handler
+
+	if handler != nil {
+		handler(ctx)
+	} else {
+		ctx.setString(404, "404 Not Found! - %s", ctx.Path)
+	}
 }
 
 // Run is used to start a http server
