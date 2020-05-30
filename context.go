@@ -22,7 +22,9 @@ type Context struct {
 	StatusCode int
 
 	// misc
-	Params map[string]string
+	Params   map[string]string
+	handlers []HandlerFunc
+	index    int // used in the middleware component
 }
 
 func newContext() *Context {
@@ -35,6 +37,7 @@ func (ctx *Context) resetContext(w http.ResponseWriter, r *http.Request) {
 		Request:        r,
 		Path:           r.URL.Path,
 		Method:         r.Method,
+		index:          -1,
 	}
 }
 
@@ -107,4 +110,13 @@ func (ctx *Context) Param(param string) string {
 		panic(fmt.Sprintf("Wildcard parameter %s doesn't exist.", param))
 	}
 	return value
+}
+
+// Next gives control to the next handler in Context.handlers
+func (ctx *Context) Next() {
+	ctx.index++
+	numOfHandlers := len(ctx.handlers)
+	for ; ctx.index < numOfHandlers; ctx.index++ {
+		ctx.handlers[ctx.index](ctx)
+	}
 }

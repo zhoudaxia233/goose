@@ -3,42 +3,52 @@ package goose
 import (
 	"log"
 	"net/http"
+	"strings"
 )
 
 // HandlerFunc is the type of request handlers used by goose
 type HandlerFunc func(*Context)
 
-// Goose is the core of everything
+// Goose is a top-level framework instance
 type Goose struct {
+	*RouterGroup
+	groups  []*RouterGroup
 	context *Context
 	router  *Router
 }
 
 // New is the constructor of goose.Goose
 func New() *Goose {
-	return &Goose{
+	goose := &Goose{
 		context: newContext(),
 		router:  newRouter(),
 	}
-}
-
-// GET is used to handle GET requests
-func (g *Goose) GET(pattern string, handler HandlerFunc) {
-	g.router.get(pattern, handler)
-}
-
-// POST is used to handle POST requests
-func (g *Goose) POST(pattern string, handler HandlerFunc) {
-	g.router.post(pattern, handler)
+	goose.RouterGroup = newRouterGroup(goose)
+	goose.groups = []*RouterGroup{goose.RouterGroup}
+	return goose
 }
 
 func (g *Goose) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	g.context.resetContext(w, r)
-	g.router.handle(g.context)
+	ctx := g.context
+	ctx.resetContext(w, r)
+
+	g.applyMiddlewares()
+	g.router.handleRequest(ctx)
 }
 
 // Run is used to start a http server
 func (g *Goose) Run(addr string) error {
 	log.Printf("* Running on http://127.0.0.1%s/\n", addr)
 	return http.ListenAndServe(addr, g)
+}
+
+func (g *Goose) applyMiddlewares() {
+	ctx := g.context
+	middlewares := []HandlerFunc{}
+	for _, group := range g.groups {
+		if strings.HasPrefix(ctx.Path, group.prefix) {
+			middlewares = append(middlewares, group.middlewares...)
+		}
+	}
+	ctx.handlers = middlewares
 }

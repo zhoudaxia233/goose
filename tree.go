@@ -61,10 +61,9 @@ func (n *node) insertHelper(segments []string, level int, handler HandlerFunc) {
 			}
 			n.children = append(n.children, newChild)
 			return
-		} else {
-			existingChild.handler = handler
-			return
 		}
+		existingChild.handler = handler
+		return
 	}
 
 	if !isWildSegment && isLastSegment {
@@ -104,10 +103,9 @@ func (n *node) insertHelper(segments []string, level int, handler HandlerFunc) {
 			}
 			n.children = append(n.children, newChild)
 			return
-		} else {
-			existingChild.handler = handler
-			return
 		}
+		existingChild.handler = handler
+		return
 	}
 
 	if !isLastSegment {

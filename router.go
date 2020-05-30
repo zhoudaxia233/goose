@@ -1,10 +1,6 @@
 package goose
 
-import (
-	"net/http"
-)
-
-// Router represents a collection of path=>handler mappings
+// Router represents a collection of "HTTP verbs=>routing tree" mappings
 type Router struct {
 	routers map[string]*node
 }
@@ -20,22 +16,22 @@ func (r *Router) addRoute(method string, pattern string, handler HandlerFunc) {
 	r.routers[method].insert(pattern, handler)
 }
 
-func (r *Router) get(pattern string, handler HandlerFunc) {
-	r.addRoute(http.MethodGet, pattern, handler)
+func (r *Router) getRoute(method string, pattern string) (searchResultPtr *node, params map[string]string) {
+	searchResultPtr, params = r.routers[method].search(pattern)
+	return
 }
 
-func (r *Router) post(pattern string, handler HandlerFunc) {
-	r.addRoute(http.MethodPost, pattern, handler)
-}
+func (r *Router) handleRequest(ctx *Context) {
+	searchResultPtr, params := r.getRoute(ctx.Method, ctx.Path)
 
-func (r *Router) handle(ctx *Context) {
-	searchResultPtr, params := r.routers[ctx.Method].search(ctx.Path)
-	ctx.Params = params
 	handler := searchResultPtr.handler
+	ctx.Params = params
 
-	if handler != nil {
-		handler(ctx)
-	} else {
-		ctx.setString(404, "404 Not Found! - %s", ctx.Path)
+	if handler == nil {
+		handler = func(ctx *Context) {
+			ctx.setString(404, "404 Not Found! - %s", ctx.Path)
+		}
 	}
+	ctx.handlers = append(ctx.handlers, handler)
+	ctx.Next()
 }
