@@ -24,6 +24,11 @@ func (rg *RouterGroup) Group(prefix string) *RouterGroup {
 	return newGroup
 }
 
+// Use is used to add middlewares to a router group
+func (rg *RouterGroup) Use(middlewares ...HandlerFunc) {
+	rg.middlewares = append(rg.middlewares, middlewares...)
+}
+
 func (rg *RouterGroup) addRoute(method string, pattern string, handler HandlerFunc) {
 	pattern = rg.prefix + pattern
 	rg.goose.router.addRoute(method, pattern, handler)

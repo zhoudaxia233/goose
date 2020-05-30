@@ -15,3 +15,23 @@ func (r *Router) addRoute(method string, pattern string, handler HandlerFunc) {
 	}
 	r.routers[method].insert(pattern, handler)
 }
+
+func (r *Router) getRoute(method string, pattern string) (searchResultPtr *node, params map[string]string) {
+	searchResultPtr, params = r.routers[method].search(pattern)
+	return
+}
+
+func (r *Router) handleRequest(ctx *Context) {
+	searchResultPtr, params := r.getRoute(ctx.Method, ctx.Path)
+
+	handler := searchResultPtr.handler
+	ctx.Params = params
+
+	if handler == nil {
+		handler = func(ctx *Context) {
+			ctx.setString(404, "404 Not Found! - %s", ctx.Path)
+		}
+	}
+	ctx.handlers = append(ctx.handlers, handler)
+	ctx.Next()
+}
