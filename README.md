@@ -148,4 +148,5 @@ func main() {
 
 ## Acknowledgment
 
-I've got some useful design inspiration from [Gin](https://github.com/gin-gonic/gin).
+1. I've got some useful design inspiration from [Gin](https://github.com/gin-gonic/gin).
+2. The goose icon in the logo is made by [monkik](https://www.flaticon.com/authors/monkik) from [Flaticon](https://www.flaticon.com/).
