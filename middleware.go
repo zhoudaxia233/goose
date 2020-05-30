@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-// Time is a middleware used for logging elapsed time since the server starts
+// Time is a middleware used for logging elapsed time in each http request (per goose.Context)
 func Time(ctx *Context) {
 	startTime := time.Now()
 	ctx.Next()
