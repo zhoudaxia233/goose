@@ -1,43 +1,33 @@
 package main
 
 import (
+	"log"
+
 	"github.com/zhoudaxia233/goose"
 )
 
 func main() {
 	g := goose.New()
+	g.Use(func(ctx *goose.Context) {
+		log.Println("here get executed before handling the request")
+		ctx.Next()
+		log.Println("here get executed after handling the request")
+	})
 
 	g.GET("/", func(ctx *goose.Context) {
-		ctx.HTML("<h1>My name is goose!</h1>")
-	})
-
-	g.GET("/:name", func(ctx *goose.Context) {
-		ctx.String("I love %s!", ctx.Param(":name"))
-	})
-
-	g.GET("/category/:category", func(ctx *goose.Context) {
-		ctx.String("Category: %s", ctx.Param(":category"))
+		ctx.String("Hello World!")
 	})
 
 	v1 := g.Group("/v1")
-	{
-		v1.GET("/", func(ctx *goose.Context) {
-			ctx.HTML("<h1>V1 PAGE!</h1>")
-		})
+	v1.Use(func(ctx *goose.Context) {
+		log.Println("before v1")
+		ctx.Next()
+		log.Println("after v1")
+	})
 
-		v1.GET("/hello", func(ctx *goose.Context) {
-			ctx.String("Hello V1!")
-		})
-
-		v2 := v1.Group("/v2")
-		{
-			v2.GET("/hello", func(ctx *goose.Context) {
-				ctx.String("Hello V2!")
-			})
-		}
-	}
-
-	// g.DrawRoutingTree("GET")
+	v1.GET("/hello", func(ctx *goose.Context) {
+		ctx.String("Hello V1!")
+	})
 
 	g.Run(":8080")
 }
