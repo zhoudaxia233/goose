@@ -2,7 +2,6 @@ package goose
 
 import (
 	"net/http"
-	"net/http/httptest"
 	"testing"
 )
 
@@ -80,11 +79,4 @@ func TestCustomMiddleware(t *testing.T) {
 	if got != want {
 		t.Errorf("Want: %s , Got: %s", want, got)
 	}
-}
-
-func sendRequest(mux http.Handler, method string, path string) (w *httptest.ResponseRecorder) {
-	req := httptest.NewRequest(method, path, nil)
-	w = httptest.NewRecorder()
-	mux.ServeHTTP(w, req)
-	return
 }

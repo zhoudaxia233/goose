@@ -169,8 +169,16 @@ func (n *node) searchHelper(segments []string, level int, searchResultPtr *node,
 		if !skipWildcardMatching {
 			for _, child := range n.children {
 				if child.isWildcard {
-					params[child.segment] = segment
-					child.searchHelper(segments, level+1, searchResultPtr, params)
+					if strings.HasPrefix(child.segment, ":") {
+						// child.segment is a colon wildcard
+						params[child.segment] = segment
+						child.searchHelper(segments, level+1, searchResultPtr, params)
+					} else {
+						// child.segment is an asteroid wildcard
+						params[child.segment] = strings.Join(segments[level:], "/")
+						*searchResultPtr = *child
+						return
+					}
 				}
 			}
 		}
