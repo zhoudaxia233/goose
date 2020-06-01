@@ -1,7 +1,9 @@
 package goose
 
 import (
+	"log"
 	"net/http"
+	"os"
 	"path"
 )
 
@@ -45,4 +47,23 @@ func (rg *RouterGroup) GET(pattern string, handler HandlerFunc) {
 // POST is used to handle POST requests
 func (rg *RouterGroup) POST(pattern string, handler HandlerFunc) {
 	rg.addRoute(http.MethodPost, pattern, handler)
+}
+
+// Static registers a router for serving static files
+func (rg *RouterGroup) Static(pattern, nativePath string) {
+	if _, err := os.Stat(nativePath); os.IsNotExist(err) {
+		log.Printf("Warning: %s doesn't exist.\n", nativePath)
+	}
+	handler := rg.makeStaticHandler(pattern, http.Dir(nativePath))
+	urlPattern := path.Join(pattern, "/*files")
+	rg.GET(urlPattern, handler)
+}
+
+func (rg *RouterGroup) makeStaticHandler(pattern string, fileSystem http.FileSystem) HandlerFunc {
+	pattern = path.Join(rg.prefix, pattern)
+	fileServer := http.StripPrefix(pattern, http.FileServer(fileSystem))
+
+	return func(ctx *Context) {
+		fileServer.ServeHTTP(ctx.ResponseWriter, ctx.Request)
+	}
 }
