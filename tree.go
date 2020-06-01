@@ -169,8 +169,16 @@ func (n *node) searchHelper(segments []string, level int, searchResultPtr *node,
 		if !skipWildcardMatching {
 			for _, child := range n.children {
 				if child.isWildcard {
-					params[child.segment] = segment
-					child.searchHelper(segments, level+1, searchResultPtr, params)
+					if strings.HasPrefix(child.segment, ":") {
+						// child.segment is a colon wildcard
+						params[child.segment] = segment
+						child.searchHelper(segments, level+1, searchResultPtr, params)
+					} else {
+						// child.segment is an asteroid wildcard
+						params[child.segment] = strings.Join(segments[level:], "/")
+						*searchResultPtr = *child
+						return
+					}
 				}
 			}
 		}
@@ -192,7 +200,30 @@ func parsePattern(pattern string) (segments []string) {
 }
 
 func validateRoutingPattern(pattern string) {
+	if pattern == "/" {
+		return
+	}
+
 	if !strings.HasPrefix(pattern, "/") {
 		panic(fmt.Sprintf("Input routing pattern is %s\nIt should starts with /.", pattern))
+	}
+
+	allSegments := strings.Split(pattern, "/")
+	segments := allSegments[1:] // omit the first empty string, which was "/"(root) before Split
+	lenOfSegments := len(segments)
+	for i, segment := range segments {
+		if i == (lenOfSegments - 1) {
+			if segment == "*" {
+				panic(fmt.Sprint("Wildcard must have a name. e.g. *filepath"))
+			}
+		} else {
+			if segment == "" {
+				panic(fmt.Sprint("Consecutive slashes in a routing pattern are not allowed."))
+			} else if segment == ":" {
+				panic(fmt.Sprint("Wildcard must have a name. e.g. :goose"))
+			} else if strings.HasPrefix(segment, "*") {
+				panic(fmt.Sprint("The asteroid wildcard can only be used at the end of a routing pattern."))
+			}
+		}
 	}
 }

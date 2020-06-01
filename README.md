@@ -4,6 +4,8 @@
 
 **goose** is a lightweight web framework in Go.
 
+>Note: Currently, goose is still not ready to release. You should not use it for your project since the APIs may change a lot. Also, there are still many features for me to implement...
+
 <details>
 <summary><strong>A hello world example</strong></summary>
 
@@ -34,6 +36,7 @@ func main() {
 		- [Dynamic Routing](#dynamic-routing)
 		- [Router Group](#router-group)
 		- [Middleware](#middleware)
+		- [Static Files](#static-files)
 	- [Acknowledgment](#acknowledgment)
 
 ## Features
@@ -78,7 +81,7 @@ import (
 func main() {
 	g := goose.New()
 
-	v1 := g.Group("/v1")
+	v1 := g.Group("v1")
 	{
 		v1.GET("/", func(ctx *goose.Context) {
 			ctx.HTML("<h1>V1 PAGE!</h1>")
@@ -89,7 +92,7 @@ func main() {
 		})
 
 		// goose also supports nested router group
-		v2 := v1.Group("/v2")
+		v2 := v1.Group("v2")
 		{
 			v2.GET("/hello", func(ctx *goose.Context) {
 				ctx.String("Hello V2!")
@@ -128,7 +131,7 @@ func main() {
 		ctx.String("Hello World!")
 	})
 
-	v1 := g.Group("/v1")
+	v1 := g.Group("v1")
 	v1.Use(func(ctx *goose.Context) {
 		log.Println("before v1")
 		ctx.Next()
@@ -146,6 +149,32 @@ func main() {
 
 </details>
 
+### Static Files
+
+<details>
+<summary><strong>An example</strong></summary>
+
+```go
+package main
+
+import (
+	"github.com/zhoudaxia233/goose"
+)
+
+func main() {
+	g := goose.New()
+
+	g.Static("/assets", "examples/static")
+	g.StaticFile("/favicon.ico", "examples/favicon.ico")
+
+	g.Run(":8080")
+}
+
+```
+
+</details>
+
 ## Acknowledgment
 
-I've got some useful design inspiration from [Gin](https://github.com/gin-gonic/gin).
+1. I've got some useful design inspiration from [Gin](https://github.com/gin-gonic/gin).
+2. The goose icon in the logo is made by [monkik](https://www.flaticon.com/authors/monkik) from [Flaticon](https://www.flaticon.com/).
