@@ -4,6 +4,8 @@
 
 **goose** is a lightweight web framework in Go.
 
+>Note: Currently, goose is still not ready to release. You should not use it for your project since the APIs may change a lot. Also, there are still many features for me to implement...
+
 <details>
 <summary><strong>A hello world example</strong></summary>
 
@@ -34,6 +36,7 @@ func main() {
 		- [Dynamic Routing](#dynamic-routing)
 		- [Router Group](#router-group)
 		- [Middleware](#middleware)
+		- [Static Files](#static-files)
 	- [Acknowledgment](#acknowledgment)
 
 ## Features
@@ -138,6 +141,31 @@ func main() {
 	v1.GET("/hello", func(ctx *goose.Context) {
 		ctx.String("Hello V1!")
 	})
+
+	g.Run(":8080")
+}
+
+```
+
+</details>
+
+### Static Files
+
+<details>
+<summary><strong>An example</strong></summary>
+
+```go
+package main
+
+import (
+	"github.com/zhoudaxia233/goose"
+)
+
+func main() {
+	g := goose.New()
+
+	g.Static("/assets", "examples/static")
+	g.StaticFile("/favicon.ico", "examples/favicon.ico")
 
 	g.Run(":8080")
 }
