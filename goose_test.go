@@ -110,7 +110,7 @@ func TestRouterGroup(t *testing.T) {
 			ctx.String("Root page")
 		})
 
-		v1 := g.Group("/v1")
+		v1 := g.Group("v1")
 		{
 			v1.GET("/", func(ctx *Context) {
 				ctx.String("Group V1 is here!")
@@ -120,7 +120,7 @@ func TestRouterGroup(t *testing.T) {
 				ctx.String("Hello Group V1!")
 			})
 
-			v2 := v1.Group("/v2")
+			v2 := v1.Group("v2")
 			{
 				v2.GET("/hello", func(ctx *Context) {
 					ctx.String("Hello Group V2!")

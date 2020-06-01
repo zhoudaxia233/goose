@@ -29,7 +29,7 @@ func TestCustomMiddleware(t *testing.T) {
 		signature += "e"
 	})
 
-	v1 := g.Group("/v1")
+	v1 := g.Group("v1")
 	v1.Use(func(ctx *Context) {
 		signature += "f"
 		ctx.Next()

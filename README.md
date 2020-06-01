@@ -78,7 +78,7 @@ import (
 func main() {
 	g := goose.New()
 
-	v1 := g.Group("/v1")
+	v1 := g.Group("v1")
 	{
 		v1.GET("/", func(ctx *goose.Context) {
 			ctx.HTML("<h1>V1 PAGE!</h1>")
@@ -89,7 +89,7 @@ func main() {
 		})
 
 		// goose also supports nested router group
-		v2 := v1.Group("/v2")
+		v2 := v1.Group("v2")
 		{
 			v2.GET("/hello", func(ctx *goose.Context) {
 				ctx.String("Hello V2!")
@@ -128,7 +128,7 @@ func main() {
 		ctx.String("Hello World!")
 	})
 
-	v1 := g.Group("/v1")
+	v1 := g.Group("v1")
 	v1.Use(func(ctx *goose.Context) {
 		log.Println("before v1")
 		ctx.Next()

@@ -1,6 +1,9 @@
 package goose
 
-import "net/http"
+import (
+	"net/http"
+	"path"
+)
 
 // RouterGroup represents a group of routers with the same prefix
 type RouterGroup struct {
@@ -17,7 +20,7 @@ func newRouterGroup(goose *Goose) *RouterGroup {
 func (rg *RouterGroup) Group(prefix string) *RouterGroup {
 	goose := rg.goose
 	newGroup := &RouterGroup{
-		prefix: rg.prefix + prefix,
+		prefix: path.Join("/", rg.prefix, prefix),
 		goose:  goose,
 	}
 	goose.groups = append(goose.groups, newGroup)
