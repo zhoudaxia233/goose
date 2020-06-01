@@ -49,11 +49,18 @@ func (rg *RouterGroup) POST(pattern string, handler HandlerFunc) {
 	rg.addRoute(http.MethodPost, pattern, handler)
 }
 
+// StaticFile registers a router for serving a single static file, such as favicon.ico
+func (rg *RouterGroup) StaticFile(pattern, nativePath string) {
+	checkExistence(nativePath)
+	handler := func(ctx *Context) {
+		http.ServeFile(ctx.ResponseWriter, ctx.Request, nativePath)
+	}
+	rg.GET(pattern, handler)
+}
+
 // Static registers a router for serving static files
 func (rg *RouterGroup) Static(pattern, nativePath string) {
-	if _, err := os.Stat(nativePath); os.IsNotExist(err) {
-		log.Printf("Warning: %s doesn't exist.\n", nativePath)
-	}
+	checkExistence(nativePath)
 	handler := rg.makeStaticHandler(pattern, http.Dir(nativePath))
 	urlPattern := path.Join(pattern, "/*files")
 	rg.GET(urlPattern, handler)
@@ -65,5 +72,11 @@ func (rg *RouterGroup) makeStaticHandler(pattern string, fileSystem http.FileSys
 
 	return func(ctx *Context) {
 		fileServer.ServeHTTP(ctx.ResponseWriter, ctx.Request)
+	}
+}
+
+func checkExistence(path string) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		log.Printf("Warning: %s doesn't exist.\n", path)
 	}
 }
