@@ -39,8 +39,9 @@ func (n *node) insertHelper(segments []string, level int, handler HandlerFunc) {
 			if child.handler != nil {
 				panic(
 					fmt.Sprintf(
-						"Wildcard segment \"%s\" conflicts with existing segment \"%s\"",
+						"Wildcard segment '%s' in path '%s' conflicts with existing segment '%s'",
 						segment,
+						strings.Join(segments, "/"),
 						child.segment,
 					),
 				)
@@ -74,16 +75,18 @@ func (n *node) insertHelper(segments []string, level int, handler HandlerFunc) {
 			if child.isWildcard && child.handler != nil {
 				panic(
 					fmt.Sprintf(
-						"Segment \"%s\" conflicts with existing wildcard segment \"%s\"",
+						"Segment '%s' in path '%s' conflicts with existing wildcard segment '%s'",
 						segment,
+						strings.Join(segments, "/"),
 						child.segment,
 					),
 				)
 			} else if segment == child.segment && child.handler != nil {
 				panic(
 					fmt.Sprintf(
-						"Segment \"%s\" conflicts with existing segment \"%s\"",
+						"Segment '%s' in path '%s' conflicts with existing segment '%s'",
 						segment,
+						strings.Join(segments, "/"),
 						child.segment,
 					),
 				)
