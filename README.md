@@ -56,7 +56,7 @@ func main() {
 	g := goose.New()
 
 	g.GET("/info/:name", func(ctx *goose.Context) {
-		ctx.String("My name is %s", ctx.Param(":name"))
+		ctx.String("My name is %s", ctx.Param("name"))
 	})
 
 	g.Run(":8080")

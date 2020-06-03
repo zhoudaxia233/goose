@@ -71,7 +71,7 @@ func (rg *RouterGroup) makeStaticHandler(pattern string, fileSystem http.FileSys
 	fileServer := http.StripPrefix(pattern, http.FileServer(fileSystem))
 
 	return func(ctx *Context) {
-		file := ctx.Param("*files")
+		file := ctx.Param("files")
 		// check if file exists and/or if we have the permission to access it
 		/* the reason we add this code block is: fileServer is actually handled by
 		   the official http library. Therefore, when we access a file that either

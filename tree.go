@@ -153,7 +153,7 @@ func (n *node) searchHelper(segments []string, level int, searchResultPtr *node,
 		for _, child := range n.children {
 			if (child.segment == segment || child.isWildcard) && child.handler != nil {
 				if child.isWildcard {
-					params[child.segment] = segment
+					params[child.segment[1:]] = segment
 				}
 				*searchResultPtr = *child
 				return
@@ -174,11 +174,11 @@ func (n *node) searchHelper(segments []string, level int, searchResultPtr *node,
 				if child.isWildcard {
 					if strings.HasPrefix(child.segment, ":") {
 						// child.segment is a colon wildcard
-						params[child.segment] = segment
+						params[child.segment[1:]] = segment
 						child.searchHelper(segments, level+1, searchResultPtr, params)
 					} else {
 						// child.segment is an asteroid wildcard
-						params[child.segment] = strings.Join(segments[level:], "/")
+						params[child.segment[1:]] = strings.Join(segments[level:], "/")
 						*searchResultPtr = *child
 						return
 					}
@@ -227,6 +227,10 @@ func validateRoutingPattern(pattern string) {
 			} else if strings.HasPrefix(segment, "*") {
 				panic(fmt.Sprint("The asteroid wildcard can only be used at the end of a routing pattern."))
 			}
+		}
+
+		if segment == ":files" {
+			panic(fmt.Sprint("'files' is a reserved word in goose, you cannot use it as a wildcard name."))
 		}
 	}
 }

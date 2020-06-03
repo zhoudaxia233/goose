@@ -41,10 +41,10 @@ func TestColonWildcardRouting(t *testing.T) {
 	g := New()
 	go func() {
 		g.GET("/:name", func(ctx *Context) {
-			ctx.String("I love %s!", ctx.Param(":name"))
+			ctx.String("I love %s!", ctx.Param("name"))
 		})
 		g.GET("/category/:category", func(ctx *Context) {
-			ctx.String("Category: %s", ctx.Param(":category"))
+			ctx.String("Category: %s", ctx.Param("category"))
 		})
 		if err := g.Run(port); err != nil {
 			t.Fatal(err)
@@ -73,10 +73,10 @@ func TestRoutingWithAndWithoutTrailingSlash(t *testing.T) {
 		})
 
 		g.GET("/animal/:name", func(ctx *Context) {
-			ctx.String("I love %s!", ctx.Param(":name"))
+			ctx.String("I love %s!", ctx.Param("name"))
 		})
 		g.GET("/animal/:name/", func(ctx *Context) {
-			ctx.String("I love %s 3000 times!", ctx.Param(":name"))
+			ctx.String("I love %s 3000 times!", ctx.Param("name"))
 		})
 
 		if err := g.Run(port); err != nil {
