@@ -81,7 +81,7 @@ func (rg *RouterGroup) makeStaticHandler(pattern string, fileSystem http.FileSys
 		*/
 		f, err := fileSystem.Open(file)
 		if err != nil {
-			ctx.SetStatusCode(http.StatusNotFound)
+			ctx.StatusCode(http.StatusNotFound)
 			return
 		}
 		f.Close()

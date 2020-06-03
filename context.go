@@ -15,16 +15,21 @@ type Context struct {
 	Request        *http.Request
 
 	// request-related
+
 	Path   string
 	Method string
 
 	// response-related
-	StatusCode int
+
+	// HTTP status code
+	Code int
 
 	// misc
+
 	Params   map[string]string
 	handlers []HandlerFunc
-	index    int // used in the middleware component
+	// used in the middleware component
+	index int
 }
 
 func newContext() *Context {
@@ -43,51 +48,54 @@ func (ctx *Context) resetContext(w http.ResponseWriter, r *http.Request) {
 
 // Response part
 
-// SetHeader sets the header information for the response
-func (ctx *Context) SetHeader(key, value string) {
+// Header sets the header information for the response
+func (ctx *Context) Header(key, value string) {
 	ctx.ResponseWriter.Header().Set(key, value)
 }
 
-// SetStatusCode sets the status code for the response
-func (ctx *Context) SetStatusCode(statusCode int) {
-	ctx.StatusCode = statusCode
-	ctx.ResponseWriter.WriteHeader(statusCode)
+// StatusCode sets the status code for the response
+func (ctx *Context) StatusCode(code int) {
+	ctx.Code = code
+	ctx.ResponseWriter.WriteHeader(code)
 }
 
 // String writes string to the response
 func (ctx *Context) String(format string, a ...interface{}) {
-	ctx.setString(http.StatusOK, format, a...)
+	ctx.StringC(http.StatusOK, format, a...)
 }
 
 // HTML writes html to the response
 func (ctx *Context) HTML(html string) {
-	ctx.setHTML(http.StatusOK, html)
+	ctx.HTMLC(http.StatusOK, html)
 }
 
 // JSON writes json to the response
 func (ctx *Context) JSON(obj interface{}) {
-	ctx.setJSON(http.StatusOK, obj)
+	ctx.JSONC(http.StatusOK, obj)
 }
 
-func (ctx *Context) setString(statusCode int, format string, a ...interface{}) {
-	ctx.SetHeader("Content-Type", "text/plain; charset=utf-8")
-	ctx.SetStatusCode(statusCode)
+// StringC writes string to the response with status Code
+func (ctx *Context) StringC(statusCode int, format string, a ...interface{}) {
+	ctx.Header("Content-Type", "text/plain; charset=utf-8")
+	ctx.StatusCode(statusCode)
 	if _, err := ctx.ResponseWriter.Write([]byte(fmt.Sprintf(format, a...))); err != nil {
 		http.Error(ctx.ResponseWriter, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func (ctx *Context) setHTML(statusCode int, html string) {
-	ctx.SetHeader("Content-Type", "text/html; charset=utf-8")
-	ctx.SetStatusCode(statusCode)
+// HTMLC writes html to the response with status Code
+func (ctx *Context) HTMLC(statusCode int, html string) {
+	ctx.Header("Content-Type", "text/html; charset=utf-8")
+	ctx.StatusCode(statusCode)
 	if _, err := ctx.ResponseWriter.Write([]byte(html)); err != nil {
 		http.Error(ctx.ResponseWriter, err.Error(), http.StatusInternalServerError)
 	}
 }
 
-func (ctx *Context) setJSON(statusCode int, obj interface{}) {
-	ctx.SetHeader("Content-Type", "application/json; charset=utf-8")
-	ctx.SetStatusCode(statusCode)
+// JSONC writes json to the response with status Code
+func (ctx *Context) JSONC(statusCode int, obj interface{}) {
+	ctx.Header("Content-Type", "application/json; charset=utf-8")
+	ctx.StatusCode(statusCode)
 	encoder := json.NewEncoder(ctx.ResponseWriter)
 	if err := encoder.Encode(obj); err != nil {
 		http.Error(ctx.ResponseWriter, err.Error(), http.StatusInternalServerError)
