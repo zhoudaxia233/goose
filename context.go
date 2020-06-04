@@ -6,9 +6,6 @@ import (
 	"net/http"
 )
 
-// H is a shortcut for map[string]interface{}, it aims to facilitate the construction of JSON objects
-type H map[string]interface{}
-
 // Context represents the context of the current HTTP request
 type Context struct {
 	ResponseWriter http.ResponseWriter

@@ -6,16 +6,21 @@ import (
 	"strings"
 )
 
-// HandlerFunc is the type of request handlers used by goose
-type HandlerFunc func(*Context)
+type (
+	// HandlerFunc is the type of request handlers used by goose
+	HandlerFunc func(*Context)
 
-// Goose is a top-level framework instance
-type Goose struct {
-	*RouterGroup
-	groups  []*RouterGroup
-	context *Context
-	router  *Router
-}
+	// X is a shortcut for map[string]interface{}
+	X map[string]interface{}
+
+	// Goose is a top-level framework instance
+	Goose struct {
+		*RouterGroup
+		groups  []*RouterGroup
+		context *Context
+		router  *Router
+	}
+)
 
 // New is the constructor of goose.Goose
 func New() *Goose {
