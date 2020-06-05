@@ -1,9 +1,9 @@
 package goose
 
 import (
-	"io/ioutil"
 	"net/http"
-	"net/http/httptest"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
@@ -152,28 +152,26 @@ func TestRouterGroup(t *testing.T) {
 
 func TestTemplate(t *testing.T) {
 	g := New()
+	g.FuncMap(X{
+		"appendYear": func(s string) string {
+			year := time.Now().Year()
+			return strings.Join([]string{s, strconv.Itoa(year)}, " - ")
+		},
+	})
+	g.Set("toUpper", strings.ToUpper)
 	g.LoadHTMLGlob("testfiles/templates/*")
-	g.GET("/", func(ctx *Context) {
+
+	g.GET("/t", func(ctx *Context) {
 		ctx.HTML("hello.tmpl", X{"name": "Goose"})
 	})
 
+	g.GET("/func", func(ctx *Context) {
+		ctx.HTML("funcmaps.tmpl", X{"msg": "I love goose!"})
+	})
+
 	want := "<h1>Hello Goose</h1>"
+	testResponseBodyLocal(t, g, "/t", 200, want)
 
-	ts := httptest.NewServer(g)
-	defer ts.Close()
-
-	resp, err := http.Get(ts.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer resp.Body.Close()
-
-	body, ioerr := ioutil.ReadAll(resp.Body)
-	if ioerr != nil {
-		t.Fatal(ioerr)
-	}
-
-	if string(body) != want {
-		t.Errorf("Text doesn't match. Want: %s, Got: %s", want, string(body))
-	}
+	want = "I LOVE GOOSE! - 2020"
+	testResponseBodyLocal(t, g, "/func", 200, want)
 }

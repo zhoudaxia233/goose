@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"path"
 	"testing"
 )
 
@@ -40,4 +42,35 @@ func testResponseBody(t *testing.T, url string, wantStatusCode int, wantBody str
 	if string(body) != wantBody {
 		t.Errorf("Text doesn't match. Want: %s, Got: %s", wantBody, string(body))
 	}
+}
+
+func testResponseBodyLocal(t *testing.T, g *Goose, pattern string, wantStatusCode int, wantBody string) {
+	ts := httptest.NewServer(g)
+	defer ts.Close()
+
+	resp, err := http.Get(joinURL(ts.URL, pattern))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	body, ioerr := ioutil.ReadAll(resp.Body)
+	if ioerr != nil {
+		t.Fatal(ioerr)
+	}
+
+	if resp.StatusCode != wantStatusCode {
+		t.Errorf("Status Code: Want %d, Got %d", wantStatusCode, resp.StatusCode)
+	}
+
+	if string(body) != wantBody {
+		t.Errorf("Text doesn't match. Want: %s, Got: %s", wantBody, string(body))
+	}
+}
+
+// https://stackoverflow.com/a/34668130
+func joinURL(base, pattern string) string {
+	u, _ := url.Parse(base)
+	u.Path = path.Join(u.Path, pattern)
+	return u.String()
 }
