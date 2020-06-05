@@ -1,7 +1,9 @@
 package goose
 
 import (
+	"io/ioutil"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 	"time"
 )
@@ -146,4 +148,32 @@ func TestRouterGroup(t *testing.T) {
 	url = baseURL + port + "/v1/v2/hello"
 	testResponseBody(t, url, http.StatusOK, "Hello Group V2!")
 
+}
+
+func TestTemplate(t *testing.T) {
+	g := New()
+	g.LoadHTMLGlob("testfiles/templates/*")
+	g.GET("/", func(ctx *Context) {
+		ctx.HTML("hello.tmpl", X{"name": "Goose"})
+	})
+
+	want := "<h1>Hello Goose</h1>"
+
+	ts := httptest.NewServer(g)
+	defer ts.Close()
+
+	resp, err := http.Get(ts.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	body, ioerr := ioutil.ReadAll(resp.Body)
+	if ioerr != nil {
+		t.Fatal(ioerr)
+	}
+
+	if string(body) != want {
+		t.Errorf("Text doesn't match. Want: %s, Got: %s", want, string(body))
+	}
 }
