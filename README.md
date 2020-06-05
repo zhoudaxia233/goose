@@ -84,7 +84,7 @@ func main() {
 	v1 := g.Group("v1")
 	{
 		v1.GET("/", func(ctx *goose.Context) {
-			ctx.HTML("<h1>V1 PAGE!</h1>")
+			ctx.String("Page V1!")
 		})
 
 		v1.GET("/hello", func(ctx *goose.Context) {

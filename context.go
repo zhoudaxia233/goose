@@ -27,10 +27,11 @@ type Context struct {
 	handlers []HandlerFunc
 	// used in the middleware component
 	index int
+	goose *Goose
 }
 
-func newContext() *Context {
-	return &Context{}
+func newContext(goose *Goose) *Context {
+	return &Context{goose: goose}
 }
 
 func (ctx *Context) resetContext(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +41,7 @@ func (ctx *Context) resetContext(w http.ResponseWriter, r *http.Request) {
 		Path:           r.URL.Path,
 		Method:         r.Method,
 		index:          -1,
+		goose:          ctx.goose,
 	}
 }
 
@@ -61,9 +63,9 @@ func (ctx *Context) String(format string, a ...interface{}) {
 	ctx.StringC(http.StatusOK, format, a...)
 }
 
-// HTML writes html to the response
-func (ctx *Context) HTML(html string) {
-	ctx.HTMLC(http.StatusOK, html)
+// HTML writes "data" to template "tplName" in the response
+func (ctx *Context) HTML(tplName string, data interface{}) {
+	ctx.HTMLC(http.StatusOK, tplName, data)
 }
 
 // JSON writes json to the response
@@ -76,16 +78,17 @@ func (ctx *Context) StringC(statusCode int, format string, a ...interface{}) {
 	ctx.Header("Content-Type", "text/plain; charset=utf-8")
 	ctx.StatusCode(statusCode)
 	if _, err := ctx.ResponseWriter.Write([]byte(fmt.Sprintf(format, a...))); err != nil {
-		http.Error(ctx.ResponseWriter, err.Error(), http.StatusInternalServerError)
+		ctx.Abort(http.StatusInternalServerError, err.Error())
 	}
 }
 
 // HTMLC writes html to the response with status Code
-func (ctx *Context) HTMLC(statusCode int, html string) {
+func (ctx *Context) HTMLC(statusCode int, tplName string, data interface{}) {
 	ctx.Header("Content-Type", "text/html; charset=utf-8")
 	ctx.StatusCode(statusCode)
-	if _, err := ctx.ResponseWriter.Write([]byte(html)); err != nil {
-		http.Error(ctx.ResponseWriter, err.Error(), http.StatusInternalServerError)
+	err := ctx.goose.template.templates.ExecuteTemplate(ctx.ResponseWriter, tplName, data)
+	if err != nil {
+		ctx.Abort(http.StatusInternalServerError, err.Error())
 	}
 }
 
@@ -95,7 +98,7 @@ func (ctx *Context) JSONC(statusCode int, obj interface{}) {
 	ctx.StatusCode(statusCode)
 	encoder := json.NewEncoder(ctx.ResponseWriter)
 	if err := encoder.Encode(obj); err != nil {
-		http.Error(ctx.ResponseWriter, err.Error(), http.StatusInternalServerError)
+		ctx.Abort(http.StatusInternalServerError, err.Error())
 	}
 }
 
@@ -124,4 +127,11 @@ func (ctx *Context) Next() {
 	for ; ctx.index < numOfHandlers; ctx.index++ {
 		ctx.handlers[ctx.index](ctx)
 	}
+}
+
+// Abort stops the execution of current context and write to
+// response with statusCode and message
+func (ctx *Context) Abort(statusCode int, message string) {
+	ctx.index = len(ctx.handlers)
+	ctx.JSONC(statusCode, X{"message": message})
 }
