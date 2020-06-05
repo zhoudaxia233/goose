@@ -37,6 +37,7 @@ func main() {
 		- [Router Group](#router-group)
 		- [Middleware](#middleware)
 		- [Static Files](#static-files)
+		- [Templates](#templates)
 	- [Acknowledgment](#acknowledgment)
 
 ## Features
@@ -56,7 +57,7 @@ func main() {
 	g := goose.New()
 
 	g.GET("/info/:name", func(ctx *goose.Context) {
-		ctx.String("My name is %s", ctx.Param(":name"))
+		ctx.String("My name is %s", ctx.Param("name"))
 	})
 
 	g.Run(":8080")
@@ -84,7 +85,7 @@ func main() {
 	v1 := g.Group("v1")
 	{
 		v1.GET("/", func(ctx *goose.Context) {
-			ctx.HTML("<h1>V1 PAGE!</h1>")
+			ctx.String("Page V1!")
 		})
 
 		v1.GET("/hello", func(ctx *goose.Context) {
@@ -166,6 +167,48 @@ func main() {
 
 	g.Static("/assets", "examples/static")
 	g.StaticFile("/favicon.ico", "examples/favicon.ico")
+
+	g.Run(":8080")
+}
+
+```
+
+</details>
+
+### Templates
+
+<details>
+<summary><strong>An example</strong></summary>
+
+```go
+package main
+
+import (
+	"strconv"
+	"strings"
+	"time"
+
+	"github.com/zhoudaxia233/goose"
+)
+
+func main() {
+	g := goose.New()
+	g.FuncMap(goose.X{
+		"appendYear": func(s string) string {
+			year := time.Now().Year()
+			return strings.Join([]string{s, strconv.Itoa(year)}, " - ")
+		},
+	})
+	g.Set("toUpper", strings.ToUpper)
+	g.LoadHTMLGlob("testfiles/templates/*")
+
+	g.GET("/", func(ctx *goose.Context) {
+		ctx.HTML("hello.tmpl", goose.X{"name": "Goose"})
+	})
+
+	g.GET("/func", func(ctx *goose.Context) {
+		ctx.HTML("funcmaps.tmpl", goose.X{"msg": "I love goose!"})
+	})
 
 	g.Run(":8080")
 }

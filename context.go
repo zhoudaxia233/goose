@@ -6,29 +6,32 @@ import (
 	"net/http"
 )
 
-// H is a shortcut for map[string]interface{}, it aims to facilitate the construction of JSON objects
-type H map[string]interface{}
-
 // Context represents the context of the current HTTP request
 type Context struct {
 	ResponseWriter http.ResponseWriter
 	Request        *http.Request
 
 	// request-related
+
 	Path   string
 	Method string
 
 	// response-related
-	StatusCode int
+
+	// HTTP status code
+	Code int
 
 	// misc
+
 	Params   map[string]string
 	handlers []HandlerFunc
-	index    int // used in the middleware component
+	// used in the middleware component
+	index int
+	goose *Goose
 }
 
-func newContext() *Context {
-	return &Context{}
+func newContext(goose *Goose) *Context {
+	return &Context{goose: goose}
 }
 
 func (ctx *Context) resetContext(w http.ResponseWriter, r *http.Request) {
@@ -38,59 +41,64 @@ func (ctx *Context) resetContext(w http.ResponseWriter, r *http.Request) {
 		Path:           r.URL.Path,
 		Method:         r.Method,
 		index:          -1,
+		goose:          ctx.goose,
 	}
 }
 
 // Response part
 
-// SetHeader sets the header information for the response
-func (ctx *Context) SetHeader(key, value string) {
+// Header sets the header information for the response
+func (ctx *Context) Header(key, value string) {
 	ctx.ResponseWriter.Header().Set(key, value)
 }
 
-// SetStatusCode sets the status code for the response
-func (ctx *Context) SetStatusCode(statusCode int) {
-	ctx.StatusCode = statusCode
-	ctx.ResponseWriter.WriteHeader(statusCode)
+// StatusCode sets the status code for the response
+func (ctx *Context) StatusCode(code int) {
+	ctx.Code = code
+	ctx.ResponseWriter.WriteHeader(code)
 }
 
 // String writes string to the response
 func (ctx *Context) String(format string, a ...interface{}) {
-	ctx.setString(http.StatusOK, format, a...)
+	ctx.StringC(http.StatusOK, format, a...)
 }
 
-// HTML writes html to the response
-func (ctx *Context) HTML(html string) {
-	ctx.setHTML(http.StatusOK, html)
+// HTML writes "data" to template "tplName" in the response
+func (ctx *Context) HTML(tplName string, data interface{}) {
+	ctx.HTMLC(http.StatusOK, tplName, data)
 }
 
 // JSON writes json to the response
 func (ctx *Context) JSON(obj interface{}) {
-	ctx.setJSON(http.StatusOK, obj)
+	ctx.JSONC(http.StatusOK, obj)
 }
 
-func (ctx *Context) setString(statusCode int, format string, a ...interface{}) {
-	ctx.SetHeader("Content-Type", "text/plain; charset=utf-8")
-	ctx.SetStatusCode(statusCode)
+// StringC writes string to the response with status Code
+func (ctx *Context) StringC(statusCode int, format string, a ...interface{}) {
+	ctx.Header("Content-Type", "text/plain; charset=utf-8")
+	ctx.StatusCode(statusCode)
 	if _, err := ctx.ResponseWriter.Write([]byte(fmt.Sprintf(format, a...))); err != nil {
-		http.Error(ctx.ResponseWriter, err.Error(), http.StatusInternalServerError)
+		ctx.Abort(http.StatusInternalServerError, err.Error())
 	}
 }
 
-func (ctx *Context) setHTML(statusCode int, html string) {
-	ctx.SetHeader("Content-Type", "text/html; charset=utf-8")
-	ctx.SetStatusCode(statusCode)
-	if _, err := ctx.ResponseWriter.Write([]byte(html)); err != nil {
-		http.Error(ctx.ResponseWriter, err.Error(), http.StatusInternalServerError)
+// HTMLC writes html to the response with status Code
+func (ctx *Context) HTMLC(statusCode int, tplName string, data interface{}) {
+	ctx.Header("Content-Type", "text/html; charset=utf-8")
+	ctx.StatusCode(statusCode)
+	err := ctx.goose.template.templates.ExecuteTemplate(ctx.ResponseWriter, tplName, data)
+	if err != nil {
+		ctx.Abort(http.StatusInternalServerError, err.Error())
 	}
 }
 
-func (ctx *Context) setJSON(statusCode int, obj interface{}) {
-	ctx.SetHeader("Content-Type", "application/json; charset=utf-8")
-	ctx.SetStatusCode(statusCode)
+// JSONC writes json to the response with status Code
+func (ctx *Context) JSONC(statusCode int, obj interface{}) {
+	ctx.Header("Content-Type", "application/json; charset=utf-8")
+	ctx.StatusCode(statusCode)
 	encoder := json.NewEncoder(ctx.ResponseWriter)
 	if err := encoder.Encode(obj); err != nil {
-		http.Error(ctx.ResponseWriter, err.Error(), http.StatusInternalServerError)
+		ctx.Abort(http.StatusInternalServerError, err.Error())
 	}
 }
 
@@ -119,4 +127,11 @@ func (ctx *Context) Next() {
 	for ; ctx.index < numOfHandlers; ctx.index++ {
 		ctx.handlers[ctx.index](ctx)
 	}
+}
+
+// Abort stops the execution of current context and write to
+// response with statusCode and message
+func (ctx *Context) Abort(statusCode int, message string) {
+	ctx.index = len(ctx.handlers)
+	ctx.JSONC(statusCode, X{"message": message})
 }

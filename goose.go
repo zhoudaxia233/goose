@@ -1,31 +1,60 @@
 package goose
 
 import (
+	tpl "html/template"
 	"log"
 	"net/http"
 	"strings"
 )
 
-// HandlerFunc is the type of request handlers used by goose
-type HandlerFunc func(*Context)
+type (
+	// HandlerFunc is the type of request handlers used by goose
+	HandlerFunc func(*Context)
 
-// Goose is a top-level framework instance
-type Goose struct {
-	*RouterGroup
-	groups  []*RouterGroup
-	context *Context
-	router  *Router
-}
+	// X is a shortcut for map[string]interface{}
+	X map[string]interface{}
+
+	// Template acts as an interface of Go's html templating system used in goose
+	Template struct {
+		funcMap   X
+		templates *tpl.Template
+	}
+
+	// Goose is a top-level framework instance
+	Goose struct {
+		*RouterGroup
+		groups   []*RouterGroup
+		context  *Context
+		router   *Router
+		template *Template
+	}
+)
 
 // New is the constructor of goose.Goose
 func New() *Goose {
 	goose := &Goose{
-		context: newContext(),
-		router:  newRouter(),
+		router:   newRouter(),
+		template: &Template{funcMap: make(X)},
 	}
+	goose.context = newContext(goose)
 	goose.RouterGroup = newRouterGroup(goose)
 	goose.groups = []*RouterGroup{goose.RouterGroup}
 	return goose
+}
+
+// FuncMap takes a map of type X and use it as the funcMap of goose
+func (g *Goose) FuncMap(funcMap X) {
+	g.template.funcMap = funcMap
+}
+
+// Set sets the funcMap entries which defines the mapping from names to functions
+func (g *Goose) Set(key string, value interface{}) {
+	g.template.funcMap[key] = value
+}
+
+// LoadHTMLGlob loads a glob of HTML templates in one go
+func (g *Goose) LoadHTMLGlob(pattern string) {
+	g.template.templates = tpl.Must(tpl.New("").Funcs(tpl.FuncMap(g.template.funcMap)).ParseGlob(pattern))
 }
 
 func (g *Goose) ServeHTTP(w http.ResponseWriter, r *http.Request) {

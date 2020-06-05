@@ -29,7 +29,7 @@ func (r *Router) handleRequest(ctx *Context) {
 
 	if handler == nil {
 		handler = func(ctx *Context) {
-			ctx.setString(404, "404 Not Found! - %s", ctx.Path)
+			ctx.StringC(404, "404 Not Found! - %s", ctx.Path)
 		}
 	}
 	ctx.handlers = append(ctx.handlers, handler)

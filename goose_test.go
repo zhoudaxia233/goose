@@ -2,16 +2,16 @@ package goose
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 	"testing"
 	"time"
 )
 
-const (
-	baseURL = "http://127.0.0.1"
-)
-
 func TestRun(t *testing.T) {
+	baseURL := "http://127.0.0.1"
 	port := ":8080"
+
 	g := New()
 	go func() {
 		g.GET("/", func(ctx *Context) {
@@ -37,113 +37,109 @@ func TestRun(t *testing.T) {
 }
 
 func TestColonWildcardRouting(t *testing.T) {
-	port := ":8081"
 	g := New()
-	go func() {
-		g.GET("/:name", func(ctx *Context) {
-			ctx.String("I love %s!", ctx.Param(":name"))
-		})
-		g.GET("/category/:category", func(ctx *Context) {
-			ctx.String("Category: %s", ctx.Param(":category"))
-		})
-		if err := g.Run(port); err != nil {
-			t.Fatal(err)
-		}
-	}()
-	// wait for the goroutine to start and run the server
-	// otherwise the main thread will complete
-	time.Sleep(200 * time.Millisecond)
+	g.GET("/:name", func(ctx *Context) {
+		ctx.String("I love %s!", ctx.Param("name"))
+	})
+	g.GET("/category/:category", func(ctx *Context) {
+		ctx.String("Category: %s", ctx.Param("category"))
+	})
 
-	url := baseURL + port + "/goose"
-	testResponseBody(t, url, http.StatusOK, "I love goose!")
+	want := "I love goose!"
+	testResponseBodyLocal(t, g, "/goose", http.StatusOK, want)
 
-	url = baseURL + port + "/category/history"
-	testResponseBody(t, url, http.StatusOK, "Category: history")
+	want = "Category: history"
+	testResponseBodyLocal(t, g, "/category/history", http.StatusOK, want)
 }
 
 func TestRoutingWithAndWithoutTrailingSlash(t *testing.T) {
-	port := ":8085"
 	g := New()
-	go func() {
-		g.GET("/info", func(ctx *Context) {
-			ctx.String("Information page")
-		})
-		g.GET("/info/", func(ctx *Context) {
-			ctx.String("Trailing information page")
-		})
 
-		g.GET("/animal/:name", func(ctx *Context) {
-			ctx.String("I love %s!", ctx.Param(":name"))
-		})
-		g.GET("/animal/:name/", func(ctx *Context) {
-			ctx.String("I love %s 3000 times!", ctx.Param(":name"))
-		})
+	g.GET("/info", func(ctx *Context) {
+		ctx.String("Information page")
+	})
+	g.GET("/info/", func(ctx *Context) {
+		ctx.String("Trailing information page")
+	})
 
-		if err := g.Run(port); err != nil {
-			t.Fatal(err)
-		}
-	}()
-	// wait for the goroutine to start and run the server
-	// otherwise the main thread will complete
-	time.Sleep(200 * time.Millisecond)
+	g.GET("/animal/:name", func(ctx *Context) {
+		ctx.String("I love %s!", ctx.Param("name"))
+	})
+	g.GET("/animal/:name/", func(ctx *Context) {
+		ctx.String("I love %s 3000 times!", ctx.Param("name"))
+	})
 
-	url := baseURL + port + "/info"
-	testResponseBody(t, url, http.StatusOK, "Information page")
+	want := "Information page"
+	testResponseBodyLocal(t, g, "/info", http.StatusOK, want)
 
-	url = baseURL + port + "/info/"
-	testResponseBody(t, url, http.StatusOK, "Trailing information page")
+	want = "Trailing information page"
+	testResponseBodyLocal(t, g, "/info/", http.StatusOK, want)
 
-	url = baseURL + port + "/animal/goose"
-	testResponseBody(t, url, http.StatusOK, "I love goose!")
+	want = "I love goose!"
+	testResponseBodyLocal(t, g, "/animal/goose", http.StatusOK, want)
 
-	url = baseURL + port + "/animal/goose/"
-	testResponseBody(t, url, http.StatusOK, "I love goose 3000 times!")
+	want = "I love goose 3000 times!"
+	testResponseBodyLocal(t, g, "/animal/goose/", http.StatusOK, want)
 }
 
 func TestRouterGroup(t *testing.T) {
-	port := ":8086"
 	g := New()
-	go func() {
-		g.GET("/", func(ctx *Context) {
-			ctx.String("Root page")
+	g.GET("/", func(ctx *Context) {
+		ctx.String("Root page")
+	})
+
+	v1 := g.Group("v1")
+	{
+		v1.GET("/", func(ctx *Context) {
+			ctx.String("Group V1 is here!")
 		})
 
-		v1 := g.Group("v1")
+		v1.GET("/hello", func(ctx *Context) {
+			ctx.String("Hello Group V1!")
+		})
+
+		v2 := v1.Group("v2")
 		{
-			v1.GET("/", func(ctx *Context) {
-				ctx.String("Group V1 is here!")
+			v2.GET("/hello", func(ctx *Context) {
+				ctx.String("Hello Group V2!")
 			})
-
-			v1.GET("/hello", func(ctx *Context) {
-				ctx.String("Hello Group V1!")
-			})
-
-			v2 := v1.Group("v2")
-			{
-				v2.GET("/hello", func(ctx *Context) {
-					ctx.String("Hello Group V2!")
-				})
-			}
 		}
+	}
+	want := "Root page"
+	testResponseBodyLocal(t, g, "/", http.StatusOK, want)
 
-		if err := g.Run(port); err != nil {
-			t.Fatal(err)
-		}
-	}()
-	// wait for the goroutine to start and run the server
-	// otherwise the main thread will complete
-	time.Sleep(200 * time.Millisecond)
+	want = "Group V1 is here!"
+	testResponseBodyLocal(t, g, "/v1/", http.StatusOK, want)
 
-	url := baseURL + port + "/"
-	testResponseBody(t, url, http.StatusOK, "Root page")
+	want = "Hello Group V1!"
+	testResponseBodyLocal(t, g, "/v1/hello", http.StatusOK, want)
 
-	url = baseURL + port + "/v1/"
-	testResponseBody(t, url, http.StatusOK, "Group V1 is here!")
+	want = "Hello Group V2!"
+	testResponseBodyLocal(t, g, "/v1/v2/hello", http.StatusOK, want)
+}
 
-	url = baseURL + port + "/v1/hello"
-	testResponseBody(t, url, http.StatusOK, "Hello Group V1!")
+func TestTemplate(t *testing.T) {
+	g := New()
+	g.FuncMap(X{
+		"appendYear": func(s string) string {
+			year := time.Now().Year()
+			return strings.Join([]string{s, strconv.Itoa(year)}, " - ")
+		},
+	})
+	g.Set("toUpper", strings.ToUpper)
+	g.LoadHTMLGlob("testfiles/templates/*")
 
-	url = baseURL + port + "/v1/v2/hello"
-	testResponseBody(t, url, http.StatusOK, "Hello Group V2!")
+	g.GET("/t", func(ctx *Context) {
+		ctx.HTML("hello.tmpl", X{"name": "Goose"})
+	})
 
+	g.GET("/func", func(ctx *Context) {
+		ctx.HTML("funcmaps.tmpl", X{"msg": "I love goose!"})
+	})
+
+	want := "<h1>Hello Goose</h1>"
+	testResponseBodyLocal(t, g, "/t", http.StatusOK, want)
+
+	want = "I LOVE GOOSE! - 2020"
+	testResponseBodyLocal(t, g, "/func", http.StatusOK, want)
 }

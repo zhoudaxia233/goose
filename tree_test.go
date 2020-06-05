@@ -10,7 +10,7 @@ func TestAsteroidRouting(t *testing.T) {
 	g := New()
 
 	g.GET("/assets/*files", func(ctx *Context) {
-		signature += ctx.Param("*files")
+		signature += ctx.Param("files")
 	})
 
 	// test /assets/hello
