@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"net/url"
 	"path"
+	"strings"
 	"testing"
 )
 
@@ -72,5 +73,9 @@ func testResponseBodyLocal(t *testing.T, g *Goose, pattern string, wantStatusCod
 func joinURL(base, pattern string) string {
 	u, _ := url.Parse(base)
 	u.Path = path.Join(u.Path, pattern)
+
+	if len(pattern) > 1 && strings.HasSuffix(pattern, "/") {
+		return u.String() + "/"
+	}
 	return u.String()
 }
